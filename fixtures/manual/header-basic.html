@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Design Analyzer Manual Header Fixture</title>
+  <style>
+    :root {
+      color: rgb(17, 24, 39);
+      background: rgb(244, 247, 251);
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: rgb(244, 247, 251);
+    }
+
+    .fixture-header {
+      width: 100%;
+      min-height: 96px;
+      padding: 24px 32px;
+      border-bottom: 1px solid rgb(203, 213, 225);
+      background: rgb(255, 255, 255);
+    }
+
+    .fixture-header__container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 960px;
+      min-height: 48px;
+      margin: 0 auto;
+      padding: 0 20px;
+      border: 1px solid rgb(226, 232, 240);
+      border-radius: 12px;
+      gap: 28px;
+      background: rgb(248, 250, 252);
+    }
+
+    .fixture-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: 96px;
+      height: 40px;
+      color: rgb(15, 23, 42);
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 24px;
+      letter-spacing: 0;
+      text-decoration: none;
+    }
+
+    .fixture-logo-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      color: rgb(255, 255, 255);
+      background: rgb(15, 23, 42);
+      font-size: 16px;
+      line-height: 20px;
+    }
+
+    .fixture-logo-text {
+      display: inline-block;
+      color: rgb(15, 23, 42);
+    }
+
+    .fixture-nav ul {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .fixture-nav a {
+      color: rgb(51, 65, 85);
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 20px;
+      letter-spacing: 0;
+      text-decoration: none;
+    }
+
+    .fixture-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .fixture-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 92px;
+      height: 38px;
+      border: 1px solid rgb(148, 163, 184);
+      border-radius: 8px;
+      color: rgb(15, 23, 42);
+      background: rgb(255, 255, 255);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 18px;
+      letter-spacing: 0;
+      text-decoration: none;
+    }
+
+    .fixture-button--primary {
+      width: 96px;
+      border-color: rgb(37, 99, 235);
+      color: rgb(255, 255, 255);
+      background: rgb(37, 99, 235);
+    }
+
+    .fixture-guard-text {
+      display: inline-block;
+      width: 120px;
+      height: 1px;
+      overflow: hidden;
+      color: rgb(71, 85, 105);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .fixture-hidden {
+      display: none;
+    }
+
+    .fixture-invisible {
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <header id="fixture-header" class="fixture-header" data-fixture="header-basic">
+    <div class="fixture-header__container">
+      <a class="fixture-logo" href="#home">
+        <span class="fixture-logo-mark" aria-hidden="true">A</span>
+        <span class="fixture-logo-text">Acme</span>
+      </a>
+
+      <nav class="fixture-nav" aria-label="Primary navigation">
+        <ul>
+          <li><a href="#product">Product</a></li>
+          <li><a href="#resources">Resources</a></li>
+          <li><a href="#customers">Customers</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+        </ul>
+      </nav>
+
+      <div class="fixture-actions">
+        <a class="fixture-button" href="#login">Log in</a>
+        <a class="fixture-button fixture-button--primary" href="#signup">Sign up</a>
+      </div>
+
+      <span class="fixture-guard-text" aria-hidden="true">
+        Manual fixture visible spacing typography color border background gap radius sample text.
+      </span>
+
+      <div class="fixture-hidden">Hidden Mobile Menu</div>
+      <div class="fixture-invisible">Invisible Tracking Text</div>
+      <template>
+        <span>Template Hidden Text</span>
+      </template>
+      <script>
+        window.__fixtureScriptLabel = "Script Hidden Text";
+      </script>
+      <style>
+        /* Style Hidden Text */
+      </style>
+    </div>
+  </header>
+</body>
+</html>
