@@ -49,6 +49,7 @@ const RAW_DETAIL_GROUPS = [
 const CHILD_TREE_INCLUDES = [
   "```text",
   "Logo Link (a)",
+  "Logo (svg)",
   "Navigation (nav)",
   "List (ul)",
   "Link (a)",
@@ -62,7 +63,7 @@ const CHILD_TREE_INCLUDES = [
 const QUALITY_INCLUDES = [
   "| Element | `Header (header)` |",
   "| Selector | `header#fixture-header` |",
-  "| Text | `Acme · Product · Resources · Customers · Pricing · Log in · Sign up` |",
+  "| Text | `Product · Resources · Customers · Pricing · Log in · Sign up` |",
   "### Summary",
   "### Text Details",
   "selector: span.fixture-logo-text",
@@ -74,6 +75,9 @@ const QUALITY_INCLUDES = [
 const QUALITY_EXCLUDES = [
   "AcmeProductResourcesCustomersPricing",
   "Action Group (span)",
+  "Element (path)",
+  "Element (rect)",
+  "Element (circle)",
   "span.fixture-buttonItem.fixture-buttonItem",
   " / selector: `header#fixture-header >",
   " / selector: `body >",
@@ -143,6 +147,12 @@ const CLASS_STYLES = {
     backgroundColor: "rgb(15, 23, 42)",
     fontSize: "16px",
     lineHeight: "20px",
+  },
+  "fixture-logo-svg": {
+    display: "inline-block",
+    width: "28px",
+    height: "28px",
+    color: "rgb(15, 23, 42)",
   },
   "fixture-logo-text": {
     display: "inline-block",
@@ -234,6 +244,9 @@ const TAG_STYLES = {
   },
   span: {
     display: "inline",
+  },
+  svg: {
+    display: "inline-block",
   },
   style: {
     display: "none",

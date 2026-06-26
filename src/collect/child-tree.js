@@ -30,6 +30,23 @@
     link: true,
     noscript: true,
   };
+  var SKIPPED_SVG_CHILD_TAGS = {
+    path: true,
+    rect: true,
+    circle: true,
+    ellipse: true,
+    line: true,
+    polyline: true,
+    polygon: true,
+    g: true,
+    defs: true,
+    clippath: true,
+    mask: true,
+    use: true,
+    lineargradient: true,
+    radialgradient: true,
+    stop: true,
+  };
 
   function summarizeText(el, context) {
     return context.collect.summarizeVisibleText(el, context, MAX_TEXT_LENGTH, "");
@@ -46,7 +63,7 @@
   function shouldSkipElement(el) {
     var tagName = el && el.tagName ? el.tagName.toLowerCase() : "";
 
-    return Boolean(SKIPPED_TAGS[tagName]);
+    return Boolean(SKIPPED_TAGS[tagName] || SKIPPED_SVG_CHILD_TAGS[tagName]);
   }
 
   function hasMeaningfulAttribute(el) {

@@ -17,9 +17,9 @@ DevTools Design Analyzer v2의 현재 상태, 다음 작업, 결정 사항, runt
 Project: DevTools Design Analyzer v2
 Mode: Clean rewrite
 Legacy: Reference only
-Current Phase: v0.2.2 Tree Label Polish 구현 완료, Chrome DevTools 확인 대기
-Next Phase: v0.2.2 Tree Label Polish Chrome DevTools 확인
-Status: v0.1.0 Stable, v0.2.2 Implemented / Chrome Pending
+Current Phase: v0.2.3 SVG / Decorative Node Cleanup 구현 완료, Chrome DevTools 확인 대기
+Next Phase: v0.2.3 SVG / Decorative Node Cleanup Chrome DevTools 확인
+Status: v0.1.0 Stable, v0.2.3 Implemented / Chrome Pending
 ```
 
 ## Phase Status
@@ -42,6 +42,7 @@ Status: v0.1.0 Stable, v0.2.2 Implemented / Chrome Pending
 | 14 | v0.2.0 Report Formatting Upgrade | Implemented / Chrome Pending | renderer 중심 Markdown 품질 개선, smoke 통과 |
 | 15 | v0.2.1 Child Tree Readability Upgrade | Implemented / Chrome Pending | wrapper flattening, role/readability label 개선, smoke 통과 |
 | 16 | v0.2.2 Tree Label Polish | Implemented / Chrome Pending | `Action Group (span)` 방지, 단일 text span wrapper 단순화, selector class dedupe, smoke 통과 |
+| 17 | v0.2.3 SVG / Decorative Node Cleanup | Implemented / Chrome Pending | SVG 내부 shape 노드 숨김, SVG root 보존, smoke 통과 |
 
 ## Docs Status
 
@@ -103,11 +104,36 @@ analyzeSelectedElementReadable(root = $0)
 2. 최신 `dist/analyzer.dev.js`를 Snippet으로 로드
 3. Elements 패널에서 header 요소 선택
 4. `const result = analyzeSelectedElementReadable($0);` 실행
-5. Child Elements에 `Action Group (span)`이 없는지 확인
-6. `Button`, `Link`, `Logo Link`, `Navigation List`, `Action Group (ul)` 같은 의미 노드가 유지되는지 확인
-7. `Docs`, `Open app`, spacer size 같은 hidden/state text가 섞이지 않는지 확인
+5. Child Elements에 `Element (path)`, `Element (rect)`, `Element (circle)`이 없는지 확인
+6. `Logo Link`, `Logo (svg)` 또는 `Icon (svg)` 같은 의미 노드가 유지되는지 확인
+7. `Button`, `Link`, `Product`, `Sign up` 같은 실제 UI 요소가 유지되는지 확인
 8. 확인 결과를 progress tracker에 기록
 ```
+
+## v0.2.3 SVG / Decorative Node Cleanup
+
+구현 결과:
+
+- `src/collect/child-tree.js`에서 SVG 내부 shape / definition 태그를 Child Elements에서 제외했다.
+- 제외 대상은 `path`, `rect`, `circle`, `ellipse`, `line`, `polyline`, `polygon`, `g`, `defs`, `clipPath`, `mask`, `use`, `linearGradient`, `radialGradient`, `stop`이다.
+- SVG root 자체는 기존 child tree 수집 흐름에 남겨 `Logo (svg)` / `Icon (svg)` / `Asset (svg)`로 표시될 수 있게 유지했다.
+- `fixtures/manual/header-basic.html`에 작은 inline logo SVG 회귀 케이스를 추가했다.
+- `scripts/smoke-test.js`에서 `Logo (svg)` 보존과 `Element (path)` 누락을 확인한다.
+- `dist/analyzer.dev.js`를 재생성했다.
+
+확인 결과:
+
+- `node scripts/concat-dev.js`: Pass
+- `node scripts/smoke-test.js`: Pass
+- context mutation static check 3종: Pass
+- DOM read static check: Pass, DOM 직접 read는 validation / `src/dom/helpers.js` / smoke harness에 한정
+- Chrome DevTools manual confirmation: Pending
+
+알려진 제한:
+
+- width behavior inference는 아직 구현하지 않았다.
+- content-fit / parent-fill inference는 아직 구현하지 않았다.
+- height source trace는 아직 구현하지 않았다.
 
 ## v0.2.2 Tree Label Polish
 
