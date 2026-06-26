@@ -47,10 +47,16 @@ const RAW_DETAIL_GROUPS = [
 ];
 
 const QUALITY_INCLUDES = [
-  "- Selector: `header#fixture-header`",
-  "- Text: Acme Product Resources Customers Pricing Log in Sign up",
-  "selector: `span.fixture-logo-text`",
-  "selector: `a.fixture-button`",
+  "| Element | `Header (header)` |",
+  "| Selector | `header#fixture-header` |",
+  "| Text | `Acme · Product · Resources · Customers · Pricing · Log in · Sign up` |",
+  "```text\nElement (div)",
+  "### Summary",
+  "### Text Details",
+  "selector: span.fixture-logo-text",
+  "selector: a.fixture-button",
+  "#### Identity",
+  "| Source Path | `header#fixture-header` |",
 ];
 
 const QUALITY_EXCLUDES = [

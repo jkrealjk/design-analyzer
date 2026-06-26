@@ -17,9 +17,9 @@ DevTools Design Analyzer v2의 현재 상태, 다음 작업, 결정 사항, runt
 Project: DevTools Design Analyzer v2
 Mode: Clean rewrite
 Legacy: Reference only
-Current Phase: Phase 13 Quality Loop 구현 완료, Chrome DevTools 확인 대기
-Next Phase: Phase 13 Quality Loop Chrome DevTools 확인
-Status: Phase 2-12 Done, Phase 13 Implemented / Chrome Pending
+Current Phase: v0.2.0 Report Formatting Upgrade 구현 완료, Chrome DevTools 확인 대기
+Next Phase: v0.2.0 Report Formatting Upgrade Chrome DevTools 확인
+Status: v0.1.0 Stable, v0.2.0 Implemented / Chrome Pending
 ```
 
 ## Phase Status
@@ -39,6 +39,7 @@ Status: Phase 2-12 Done, Phase 13 Implemented / Chrome Pending
 | 11 | Smoke Test | Done | `node scripts/smoke-test.js` 통과 |
 | 12 | Role Split | Done | 사용자 확인: Chrome DevTools에서 role split 확인 완료 |
 | 13 | Quality Loop | Implemented / Chrome Pending | text / selector / typography readability 개선, smoke 통과 |
+| 14 | v0.2.0 Report Formatting Upgrade | Implemented / Chrome Pending | renderer 중심 Markdown 품질 개선, smoke 통과 |
 
 ## Docs Status
 
@@ -100,7 +101,7 @@ analyzeSelectedElementReadable(root = $0)
 2. 최신 `dist/analyzer.dev.js`를 Snippet으로 로드
 3. Elements 패널에서 `header#fixture-header` 선택
 4. `const result = analyzeSelectedElementReadable($0);` 실행
-5. text summary / Typography selector / hidden label 제외 확인
+5. Selected Element table / fenced text tree / Typography Summary+Text Details / Raw Details tables 확인
 6. 확인 결과를 progress tracker에 기록
 ```
 
@@ -260,6 +261,11 @@ dynamic-text-diff
 | 2026-06-26 | 13 | Context static check 3종 `rg` | Pass | direct context mutation 의심 패턴 없음 |
 | 2026-06-26 | 13 | DOM read static check `rg` | Pass | DOM 직접 호출은 validation / `src/dom/helpers.js`에 한정 |
 | 2026-06-26 | 13 | Chrome DevTools quality check | Pending | 사용자가 regenerated dist로 Chrome에서 확인 필요 |
+| 2026-06-26 | 14 | `node scripts/concat-dev.js` | Pass | v0.2.0 renderer formatting 포함해 `dist/analyzer.dev.js` 재생성 |
+| 2026-06-26 | 14 | `node scripts/smoke-test.js` | Pass | table / fenced tree / Typography Summary+Text Details / Raw Details table 형식 확인 |
+| 2026-06-26 | 14 | Context static check 3종 `rg` | Pass | direct context mutation 의심 패턴 없음 |
+| 2026-06-26 | 14 | DOM read static check `rg` | Pass | DOM 직접 호출은 validation / `src/dom/helpers.js`에 한정 |
+| 2026-06-26 | 14 | Chrome DevTools formatting check | Pending | 사용자가 regenerated dist로 Chrome에서 확인 필요 |
 
 ## Fixture Log
 
@@ -269,6 +275,7 @@ dynamic-text-diff
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | `node scripts/smoke-test.js` 통과 |
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | 사용자 확인: Phase 12 Role Split Chrome DevTools 확인 완료 |
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | Phase 13 smoke test 통과, Chrome DevTools 확인 대기 |
+| 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | v0.2.0 formatting smoke test 통과, Chrome DevTools 확인 대기 |
 | - | Stripe | Header | Pending | - |
 | - | Vercel | Header | Pending | - |
 | - | Linear | Header | Pending | - |
