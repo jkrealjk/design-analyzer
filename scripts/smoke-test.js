@@ -73,6 +73,8 @@ const QUALITY_INCLUDES = [
 
 const QUALITY_EXCLUDES = [
   "AcmeProductResourcesCustomersPricing",
+  "Action Group (span)",
+  "span.fixture-buttonItem.fixture-buttonItem",
   " / selector: `header#fixture-header >",
   " / selector: `body >",
 ];

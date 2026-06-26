@@ -195,7 +195,7 @@
         return "Nav Group";
       }
 
-      if (isActionEvidence(evidence)) {
+      if (tag === "div" && isActionEvidence(evidence)) {
         return "Action Group";
       }
     }

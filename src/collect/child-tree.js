@@ -95,6 +95,15 @@
     return Boolean(role && role !== "Element" && role !== "Text");
   }
 
+  function isInteractiveOrAssetRole(role) {
+    return role === "Link" ||
+      role === "Button" ||
+      role === "Logo Link" ||
+      role === "Logo" ||
+      role === "Icon" ||
+      role === "Asset";
+  }
+
   function hasMeaningfulVisibleDescendant(children, context, depth) {
     var index;
     var child;
@@ -150,6 +159,27 @@
       !hasMeaningfulVisibleDescendant(visibleChildren, context, 1);
   }
 
+  function isSingleTextSpanWrapper(el, context, role, visibleChildren) {
+    var tagName = el && el.tagName ? el.tagName.toLowerCase() : "";
+    var childRole;
+
+    if (tagName !== "span" || hasMeaningfulAttribute(el) || hasMeaningfulTreeRole(role)) {
+      return false;
+    }
+
+    if (visibleChildren.length === 0) {
+      return Boolean(context.collect.getDirectText(el));
+    }
+
+    if (visibleChildren.length !== 1) {
+      return false;
+    }
+
+    childRole = context.roles.inferRole(visibleChildren[0], context.roleContext);
+
+    return isInteractiveOrAssetRole(childRole);
+  }
+
   function createTreeNode(el, context, depth) {
     var tagName = el.tagName ? el.tagName.toLowerCase() : "element";
     var rect = context.dom.getRect(el, context);
@@ -192,6 +222,11 @@
       visibleChildren = getVisibleChildren(child, context);
 
       if (isLayoutOnlySpacer(child, context, role, visibleChildren)) {
+        continue;
+      }
+
+      if (isSingleTextSpanWrapper(child, context, role, visibleChildren)) {
+        appendChildren(child, parentNode, context, state, depth);
         continue;
       }
 

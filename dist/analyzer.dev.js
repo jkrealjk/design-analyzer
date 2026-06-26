@@ -194,11 +194,46 @@
     return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
   }
 
+  function getUniqueClassParts(className, limit) {
+    var rawParts = String(className || "").trim().split(/\s+/);
+    var classParts = [];
+    var seen = {};
+    var index;
+    var classPart;
+
+    for (index = 0; index < rawParts.length; index += 1) {
+      classPart = rawParts[index];
+
+      if (!classPart || seen[classPart]) {
+        continue;
+      }
+
+      seen[classPart] = true;
+      classParts.push(classPart);
+
+      if (classParts.length >= limit) {
+        break;
+      }
+    }
+
+    return classParts;
+  }
+
+  function appendClassSelectorParts(part, className, limit) {
+    var classParts = getUniqueClassParts(className, limit);
+    var selectorPart = part;
+    var index;
+
+    for (index = 0; index < classParts.length; index += 1) {
+      selectorPart += "." + escapeSelectorPart(classParts[index]);
+    }
+
+    return selectorPart;
+  }
+
   function getElementSelectorPart(el) {
     var part = el.tagName ? el.tagName.toLowerCase() : "element";
     var className;
-    var classParts;
-    var index;
 
     if (el.id) {
       return part + "#" + escapeSelectorPart(el.id);
@@ -206,15 +241,7 @@
 
     className = typeof el.className === "string" ? el.className.trim() : "";
 
-    if (className) {
-      classParts = className.split(/\s+/).slice(0, 3);
-
-      for (index = 0; index < classParts.length; index += 1) {
-        part += "." + escapeSelectorPart(classParts[index]);
-      }
-    }
-
-    return part;
+    return className ? appendClassSelectorParts(part, className, 3) : part;
   }
 
   function getSelector(el, context) {
@@ -254,10 +281,8 @@
     var cache = getElementCache(context, "conciseSelector");
     var part;
     var className;
-    var classParts;
     var concise;
     var sourcePath;
-    var index;
 
     if (!isElementLike(el)) {
       return "";
@@ -275,13 +300,7 @@
       className = typeof el.className === "string" ? el.className.trim() : "";
       concise = part;
 
-      if (className) {
-        classParts = className.split(/\s+/).slice(0, 2);
-
-        for (index = 0; index < classParts.length; index += 1) {
-          concise += "." + escapeSelectorPart(classParts[index]);
-        }
-      }
+      concise = className ? appendClassSelectorParts(concise, className, 2) : concise;
 
       sourcePath = getSelector(el, context);
 
@@ -718,7 +737,7 @@
         return "Nav Group";
       }
 
-      if (isActionEvidence(evidence)) {
+      if (tag === "div" && isActionEvidence(evidence)) {
         return "Action Group";
       }
     }
@@ -1020,6 +1039,15 @@
     return Boolean(role && role !== "Element" && role !== "Text");
   }
 
+  function isInteractiveOrAssetRole(role) {
+    return role === "Link" ||
+      role === "Button" ||
+      role === "Logo Link" ||
+      role === "Logo" ||
+      role === "Icon" ||
+      role === "Asset";
+  }
+
   function hasMeaningfulVisibleDescendant(children, context, depth) {
     var index;
     var child;
@@ -1075,6 +1103,27 @@
       !hasMeaningfulVisibleDescendant(visibleChildren, context, 1);
   }
 
+  function isSingleTextSpanWrapper(el, context, role, visibleChildren) {
+    var tagName = el && el.tagName ? el.tagName.toLowerCase() : "";
+    var childRole;
+
+    if (tagName !== "span" || hasMeaningfulAttribute(el) || hasMeaningfulTreeRole(role)) {
+      return false;
+    }
+
+    if (visibleChildren.length === 0) {
+      return Boolean(context.collect.getDirectText(el));
+    }
+
+    if (visibleChildren.length !== 1) {
+      return false;
+    }
+
+    childRole = context.roles.inferRole(visibleChildren[0], context.roleContext);
+
+    return isInteractiveOrAssetRole(childRole);
+  }
+
   function createTreeNode(el, context, depth) {
     var tagName = el.tagName ? el.tagName.toLowerCase() : "element";
     var rect = context.dom.getRect(el, context);
@@ -1117,6 +1166,11 @@
       visibleChildren = getVisibleChildren(child, context);
 
       if (isLayoutOnlySpacer(child, context, role, visibleChildren)) {
+        continue;
+      }
+
+      if (isSingleTextSpanWrapper(child, context, role, visibleChildren)) {
+        appendChildren(child, parentNode, context, state, depth);
         continue;
       }
 

@@ -17,9 +17,9 @@ DevTools Design Analyzer v2의 현재 상태, 다음 작업, 결정 사항, runt
 Project: DevTools Design Analyzer v2
 Mode: Clean rewrite
 Legacy: Reference only
-Current Phase: v0.2.1 Child Tree Readability Upgrade 구현 완료, Chrome DevTools 확인 대기
-Next Phase: v0.2.1 Child Tree Readability Upgrade Chrome DevTools 확인
-Status: v0.1.0 Stable, v0.2.1 Implemented / Chrome Pending
+Current Phase: v0.2.2 Tree Label Polish 구현 완료, Chrome DevTools 확인 대기
+Next Phase: v0.2.2 Tree Label Polish Chrome DevTools 확인
+Status: v0.1.0 Stable, v0.2.2 Implemented / Chrome Pending
 ```
 
 ## Phase Status
@@ -41,6 +41,7 @@ Status: v0.1.0 Stable, v0.2.1 Implemented / Chrome Pending
 | 13 | Quality Loop | Implemented / Chrome Pending | text / selector / typography readability 개선, smoke 통과 |
 | 14 | v0.2.0 Report Formatting Upgrade | Implemented / Chrome Pending | renderer 중심 Markdown 품질 개선, smoke 통과 |
 | 15 | v0.2.1 Child Tree Readability Upgrade | Implemented / Chrome Pending | wrapper flattening, role/readability label 개선, smoke 통과 |
+| 16 | v0.2.2 Tree Label Polish | Implemented / Chrome Pending | `Action Group (span)` 방지, 단일 text span wrapper 단순화, selector class dedupe, smoke 통과 |
 
 ## Docs Status
 
@@ -98,15 +99,41 @@ analyzeSelectedElementReadable(root = $0)
 현재 바로 해야 할 작업만 기록한다.
 
 ```txt
-1. Chrome에서 `fixtures/manual/header-basic.html` 열기
+1. Chrome에서 Linear header 또는 `fixtures/manual/header-basic.html` 열기
 2. 최신 `dist/analyzer.dev.js`를 Snippet으로 로드
-3. Elements 패널에서 `header#fixture-header` 선택
+3. Elements 패널에서 header 요소 선택
 4. `const result = analyzeSelectedElementReadable($0);` 실행
-5. Child Elements가 `Logo Link`, `Navigation`, `List`, `Link`, `Action Group` 같은 의미 노드를 드러내는지 확인
-6. hidden / script / style / template text가 섞이지 않는지 확인
-7. Linear header에서 `Docs`, `Open app` 같은 hidden/state text가 섞이지 않는지 확인
+5. Child Elements에 `Action Group (span)`이 없는지 확인
+6. `Button`, `Link`, `Logo Link`, `Navigation List`, `Action Group (ul)` 같은 의미 노드가 유지되는지 확인
+7. `Docs`, `Open app`, spacer size 같은 hidden/state text가 섞이지 않는지 확인
 8. 확인 결과를 progress tracker에 기록
 ```
+
+## v0.2.2 Tree Label Polish
+
+구현 결과:
+
+- `src/roles/infer-role.js`에서 `span`은 action evidence가 있어도 `Action Group`으로 판정하지 않게 했다.
+- `src/collect/child-tree.js`에서 단일 text span wrapper를 Child Elements에서 보수적으로 생략한다.
+- 생략 대상 span은 유용한 role / aria-label이 없고, 직접 text만 있거나 보존해야 하는 link/button/asset child 하나만 감싸는 경우로 제한했다.
+- link / button / logo / icon / asset leaf는 계속 보존한다.
+- `src/dom/helpers.js`에서 concise selector와 source selector class name 중복을 제거했다.
+- smoke fixture에 중복 class가 있는 `fixture-buttonItem` span wrapper를 추가해 `Action Group (span)` 회귀와 selector dedupe를 확인한다.
+- `dist/analyzer.dev.js`를 재생성했다.
+
+확인 결과:
+
+- `node scripts/concat-dev.js`: Pass
+- `node scripts/smoke-test.js`: Pass
+- context mutation static check 3종: Pass
+- DOM read static check: Pass, DOM 직접 read는 validation / `src/dom/helpers.js`에 한정
+- Chrome DevTools manual confirmation: Pending
+
+알려진 제한:
+
+- width behavior inference는 아직 구현하지 않았다.
+- content-fit / parent-fill inference는 아직 구현하지 않았다.
+- height source trace는 아직 구현하지 않았다.
 
 ## v0.2.1 Child Tree Readability Upgrade
 
@@ -305,6 +332,10 @@ dynamic-text-diff
 | 2026-06-26 | 15 | v0.2.1 polish `node scripts/smoke-test.js` | Pass | 기존 fixture 계약과 child tree readability 유지 |
 | 2026-06-26 | 15 | v0.2.1 polish static check | Pass | context mutation 없음, DOM 직접 호출은 validation / `src/dom/helpers.js`에 한정 |
 | 2026-06-26 | 15 | v0.2.1 polish regression fix | Pass | broad `Action Group` 판정을 줄여 Button / Link leaf traversal 복구, spacer skip 유지 |
+| 2026-06-26 | 16 | `node scripts/concat-dev.js` | Pass | v0.2.2 Tree Label Polish 포함해 `dist/analyzer.dev.js` 재생성 |
+| 2026-06-26 | 16 | `node scripts/smoke-test.js` | Pass | `Action Group (span)` 제외, selector class dedupe, 기존 fixture 계약 유지 |
+| 2026-06-26 | 16 | Context static check 3종 `rg` | Pass | direct context mutation 의심 패턴 없음 |
+| 2026-06-26 | 16 | DOM read static check `rg` | Pass | DOM 직접 호출은 validation / `src/dom/helpers.js`에 한정 |
 
 ## Fixture Log
 
@@ -316,6 +347,7 @@ dynamic-text-diff
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | Phase 13 smoke test 통과, Chrome DevTools 확인 대기 |
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | v0.2.0 formatting smoke test 통과, Chrome DevTools 확인 대기 |
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | v0.2.1 child tree readability smoke test 통과, Chrome DevTools 확인 대기 |
+| 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | v0.2.2 tree label polish smoke test 통과, Chrome DevTools 확인 대기 |
 | - | Stripe | Header | Pending | - |
 | - | Vercel | Header | Pending | - |
 | - | Linear | Header | Pending | - |
