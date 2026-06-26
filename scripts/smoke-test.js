@@ -46,11 +46,23 @@ const RAW_DETAIL_GROUPS = [
   "Children:",
 ];
 
+const CHILD_TREE_INCLUDES = [
+  "```text",
+  "Logo Link (a)",
+  "Navigation (nav)",
+  "List (ul)",
+  "Link (a)",
+  "Action Group (div)",
+  "Product",
+  "Resources",
+  "Log in",
+  "Sign up",
+];
+
 const QUALITY_INCLUDES = [
   "| Element | `Header (header)` |",
   "| Selector | `header#fixture-header` |",
   "| Text | `Acme · Product · Resources · Customers · Pricing · Log in · Sign up` |",
-  "```text\nElement (div)",
   "### Summary",
   "### Text Details",
   "selector: span.fixture-logo-text",
@@ -571,6 +583,35 @@ function checkExcludes(name, output, forbiddenValues) {
   };
 }
 
+function getChildTreeSection(output) {
+  const match = output.match(/## Child Elements — Annotated Structure\n\n([\s\S]*?)\n\n## Typography/);
+
+  return match ? match[1] : "";
+}
+
+function checkChildTreeReadability(output) {
+  const tree = getChildTreeSection(output);
+  const meaningfulRoles = ["Logo Link", "Navigation", "List", "Link", "Action Group"];
+  const missing = CHILD_TREE_INCLUDES.filter((value) => !tree.includes(value));
+  const hasMeaningfulRole = meaningfulRoles.some((role) => tree.includes(role));
+  const onlyElementWrappers = tree.includes("Element (div)") && !hasMeaningfulRole;
+
+  if (missing.length > 0 || onlyElementWrappers) {
+    return {
+      name: "Child tree readability",
+      ok: false,
+      detail: missing.length > 0
+        ? "Missing: " + missing.join(", ")
+        : "Child tree collapsed into Element div wrappers.",
+    };
+  }
+
+  return {
+    name: "Child tree readability",
+    ok: true,
+  };
+}
+
 function runSmokeTest() {
   const fixtureHtml = fs.readFileSync(fixturePath, "utf8");
   const window = createHarness(fixtureHtml);
@@ -603,6 +644,7 @@ function runSmokeTest() {
   results.push(checkExcludes("Placeholders removed", output, REMOVED_PLACEHOLDERS));
   results.push(checkIncludes("Visible fixture labels included", output, VISIBLE_LABELS));
   results.push(checkExcludes("Hidden fixture labels excluded", output, HIDDEN_LABELS));
+  results.push(checkChildTreeReadability(output));
   results.push(checkIncludes("Raw Details groups exist", output, RAW_DETAIL_GROUPS));
   results.push(checkIncludes("Quality readable text and selectors", output, QUALITY_INCLUDES));
   results.push(checkExcludes("Quality avoids glued text and long typography selectors", output, QUALITY_EXCLUDES));

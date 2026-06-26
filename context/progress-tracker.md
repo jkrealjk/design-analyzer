@@ -17,9 +17,9 @@ DevTools Design Analyzer v2의 현재 상태, 다음 작업, 결정 사항, runt
 Project: DevTools Design Analyzer v2
 Mode: Clean rewrite
 Legacy: Reference only
-Current Phase: v0.2.0 Report Formatting Upgrade 구현 완료, Chrome DevTools 확인 대기
-Next Phase: v0.2.0 Report Formatting Upgrade Chrome DevTools 확인
-Status: v0.1.0 Stable, v0.2.0 Implemented / Chrome Pending
+Current Phase: v0.2.1 Child Tree Readability Upgrade 구현 완료, Chrome DevTools 확인 대기
+Next Phase: v0.2.1 Child Tree Readability Upgrade Chrome DevTools 확인
+Status: v0.1.0 Stable, v0.2.1 Implemented / Chrome Pending
 ```
 
 ## Phase Status
@@ -40,6 +40,7 @@ Status: v0.1.0 Stable, v0.2.0 Implemented / Chrome Pending
 | 12 | Role Split | Done | 사용자 확인: Chrome DevTools에서 role split 확인 완료 |
 | 13 | Quality Loop | Implemented / Chrome Pending | text / selector / typography readability 개선, smoke 통과 |
 | 14 | v0.2.0 Report Formatting Upgrade | Implemented / Chrome Pending | renderer 중심 Markdown 품질 개선, smoke 통과 |
+| 15 | v0.2.1 Child Tree Readability Upgrade | Implemented / Chrome Pending | wrapper flattening, role/readability label 개선, smoke 통과 |
 
 ## Docs Status
 
@@ -101,9 +102,38 @@ analyzeSelectedElementReadable(root = $0)
 2. 최신 `dist/analyzer.dev.js`를 Snippet으로 로드
 3. Elements 패널에서 `header#fixture-header` 선택
 4. `const result = analyzeSelectedElementReadable($0);` 실행
-5. Selected Element table / fenced text tree / Typography Summary+Text Details / Raw Details tables 확인
-6. 확인 결과를 progress tracker에 기록
+5. Child Elements가 `Logo Link`, `Navigation`, `List`, `Link`, `Action Group` 같은 의미 노드를 드러내는지 확인
+6. hidden / script / style / template text가 섞이지 않는지 확인
+7. Linear header에서 `Docs`, `Open app` 같은 hidden/state text가 섞이지 않는지 확인
+8. 확인 결과를 progress tracker에 기록
 ```
+
+## v0.2.1 Child Tree Readability Upgrade
+
+구현 결과:
+
+- `src/collect/child-tree.js`에 보수적인 wrapper flattening을 추가했다.
+- child tree traversal depth를 늘려 실제 header의 의미 있는 descendant까지 도달하도록 했다.
+- tiny layout-only spacer `div` / `span`은 유용한 text와 meaningful descendants가 없을 때 Child Elements에서 제외한다.
+- `src/roles/infer-role.js`에 `Logo Link`, `Nav Group`, `Action Group`, `Icon` 등 보수적인 readability label을 추가했다.
+- action / navigation / logo evidence 판정을 보수적으로 보강했다.
+- `scripts/smoke-test.js`가 fenced text tree와 의미 노드 포함 여부를 확인한다.
+- `dist/analyzer.dev.js`를 재생성했다.
+
+확인 결과:
+
+- `node scripts/concat-dev.js`: Pass
+- `node scripts/smoke-test.js`: Pass
+- context mutation static check 3종: Pass
+- DOM read static check: Pass, DOM 직접 read는 validation / `src/dom/helpers.js`에 한정
+- Chrome DevTools manual confirmation: Pending
+
+알려진 제한:
+
+- width behavior inference는 아직 구현하지 않았다.
+- content-fit / parent-fill inference는 아직 구현하지 않았다.
+- height source trace는 아직 구현하지 않았다.
+- logo / CTA heuristic은 여전히 보수적으로 유지한다.
 
 ## Check Summary
 
@@ -266,6 +296,15 @@ dynamic-text-diff
 | 2026-06-26 | 14 | Context static check 3종 `rg` | Pass | direct context mutation 의심 패턴 없음 |
 | 2026-06-26 | 14 | DOM read static check `rg` | Pass | DOM 직접 호출은 validation / `src/dom/helpers.js`에 한정 |
 | 2026-06-26 | 14 | Chrome DevTools formatting check | Pending | 사용자가 regenerated dist로 Chrome에서 확인 필요 |
+| 2026-06-26 | 15 | `node scripts/concat-dev.js` | Pass | child tree readability 개선 포함해 `dist/analyzer.dev.js` 재생성 |
+| 2026-06-26 | 15 | `node scripts/smoke-test.js` | Pass | required sections, hidden filtering, fenced child tree, 의미 노드 포함 확인 |
+| 2026-06-26 | 15 | Context static check 3종 `rg` | Pass | direct context mutation 의심 패턴 없음 |
+| 2026-06-26 | 15 | DOM read static check `rg` | Pass | DOM 직접 호출은 validation / `src/dom/helpers.js`에 한정 |
+| 2026-06-26 | 15 | Chrome DevTools child tree readability check | Pending | 사용자가 regenerated dist로 Chrome에서 확인 필요 |
+| 2026-06-26 | 15 | v0.2.1 polish `node scripts/concat-dev.js` | Pass | layout-only spacer skip과 role label 보강 포함해 `dist/analyzer.dev.js` 재생성 |
+| 2026-06-26 | 15 | v0.2.1 polish `node scripts/smoke-test.js` | Pass | 기존 fixture 계약과 child tree readability 유지 |
+| 2026-06-26 | 15 | v0.2.1 polish static check | Pass | context mutation 없음, DOM 직접 호출은 validation / `src/dom/helpers.js`에 한정 |
+| 2026-06-26 | 15 | v0.2.1 polish regression fix | Pass | broad `Action Group` 판정을 줄여 Button / Link leaf traversal 복구, spacer skip 유지 |
 
 ## Fixture Log
 
@@ -276,6 +315,7 @@ dynamic-text-diff
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | 사용자 확인: Phase 12 Role Split Chrome DevTools 확인 완료 |
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | Phase 13 smoke test 통과, Chrome DevTools 확인 대기 |
 | 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | v0.2.0 formatting smoke test 통과, Chrome DevTools 확인 대기 |
+| 2026-06-26 | Local | `fixtures/manual/header-basic.html` Header | Pass | v0.2.1 child tree readability smoke test 통과, Chrome DevTools 확인 대기 |
 | - | Stripe | Header | Pending | - |
 | - | Vercel | Header | Pending | - |
 | - | Linear | Header | Pending | - |

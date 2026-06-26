@@ -526,8 +526,127 @@
 
   var DA = global.DA;
 
+  function getAttributeValue(el, name) {
+    return el && typeof el.getAttribute === "function" ? el.getAttribute(name) || "" : "";
+  }
+
+  function getEvidenceText(el) {
+    var parent = el && el.parentElement ? el.parentElement : null;
+
+    return [
+      el && el.id ? el.id : "",
+      el && typeof el.className === "string" ? el.className : "",
+      getAttributeValue(el, "aria-label"),
+      getAttributeValue(el, "title"),
+      getAttributeValue(el, "href"),
+      parent && parent.id ? parent.id : "",
+      parent && typeof parent.className === "string" ? parent.className : "",
+    ].join(" ");
+  }
+
+  function hasToken(value, pattern) {
+    return pattern.test(String(value || ""));
+  }
+
+  function normalizeText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function appendVisibleText(el, context, state) {
+    var nodes;
+    var index;
+    var node;
+
+    if (
+      !el ||
+      state.length >= state.maxLength ||
+      (context && context.dom && !context.dom.isVisible(el, context))
+    ) {
+      return;
+    }
+
+    nodes = el.childNodes || [];
+
+    for (index = 0; index < nodes.length; index += 1) {
+      if (state.length >= state.maxLength) {
+        return;
+      }
+
+      node = nodes[index];
+
+      if (!node) {
+        continue;
+      }
+
+      if (node.nodeType === 3) {
+        state.parts.push(node.nodeValue);
+        state.length += String(node.nodeValue || "").length;
+      }
+
+      if (node.nodeType === 1) {
+        appendVisibleText(node, context, state);
+      }
+    }
+  }
+
+  function getVisibleTextEvidence(el, context) {
+    var state = {
+      parts: [],
+      length: 0,
+      maxLength: 120,
+    };
+
+    appendVisibleText(el, context, state);
+
+    return normalizeText(state.parts.join(" "));
+  }
+
+  function hasMainNavText(value) {
+    return hasToken(value, /\bProduct\b/i) &&
+      hasToken(value, /\bResources\b/i) &&
+      hasToken(value, /\b(Customers|Pricing|Now|Contact)\b/i);
+  }
+
+  function hasMostlyActionText(value) {
+    var text = normalizeText(value);
+
+    if (!text || hasMainNavText(text)) {
+      return false;
+    }
+
+    return hasToken(text, /\b(Log in|Sign up|Get started|Contact sales|Book demo)\b/i);
+  }
+
+  function isActionEvidence(value) {
+    return hasToken(value, /buttons?|actions?|cta|button[-_\s]?items?|buttonItem/i);
+  }
+
+  function isNavigationEvidence(value) {
+    return hasToken(value, /nav[-_\s]?items|navigation|nav[-_\s]?group|site navigation/i);
+  }
+
+  function isLogoEvidence(value) {
+    return hasToken(value, /(^|[-_\s])(logo|brand|home)($|[-_\s])/i);
+  }
+
   function inferRole(el, context) {
     var tag = el && el.tagName ? el.tagName.toLowerCase() : "";
+    var evidence = getEvidenceText(el);
+    var ariaLabel = getAttributeValue(el, "aria-label");
+    var visibleText = "";
+    var groupEvidence;
+
+    if (tag === "a" && (isLogoEvidence(evidence) || hasToken(ariaLabel, /home/i))) {
+      return "Logo Link";
+    }
+
+    if (tag === "svg" && (isLogoEvidence(evidence) || hasToken(ariaLabel, /linear|logo|brand|home/i))) {
+      return "Logo";
+    }
+
+    if (tag === "svg" && (ariaLabel || getAttributeValue(el, "title"))) {
+      return "Icon";
+    }
 
     if (tag === "header") {
       return "Header";
@@ -553,6 +672,23 @@
       return "Form";
     }
 
+    if (tag === "ul" || tag === "ol" || tag === "div") {
+      visibleText = getVisibleTextEvidence(el, context);
+      groupEvidence = evidence + " " + visibleText;
+
+      if (!hasMainNavText(visibleText) && isActionEvidence(groupEvidence)) {
+        return "Action Group";
+      }
+
+      if ((tag === "ul" || tag === "ol") && hasMostlyActionText(visibleText)) {
+        return "Action Group";
+      }
+    }
+
+    if ((tag === "ul" || tag === "ol") && isNavigationEvidence(evidence + " " + ariaLabel)) {
+      return "Navigation List";
+    }
+
     if (tag === "ul" || tag === "ol") {
       return "List";
     }
@@ -575,6 +711,16 @@
 
     if (tag === "input" || tag === "select" || tag === "textarea") {
       return "Field";
+    }
+
+    if (tag === "div" || tag === "span") {
+      if (isNavigationEvidence(evidence)) {
+        return "Nav Group";
+      }
+
+      if (isActionEvidence(evidence)) {
+        return "Action Group";
+      }
     }
 
     if (tag === "h1") {
@@ -782,8 +928,25 @@
 
   var DA = global.DA;
   var MAX_TEXT_LENGTH = 80;
-  var DEFAULT_MAX_DEPTH = 3;
+  var DEFAULT_MAX_DEPTH = 6;
   var DEFAULT_MAX_NODES = 40;
+  var SEMANTIC_TAGS = {
+    header: true,
+    nav: true,
+    main: true,
+    section: true,
+    footer: true,
+    form: true,
+    ul: true,
+    ol: true,
+    li: true,
+    a: true,
+    button: true,
+    input: true,
+    select: true,
+    textarea: true,
+    svg: true,
+  };
   var SKIPPED_TAGS = {
     script: true,
     style: true,
@@ -811,6 +974,107 @@
     return Boolean(SKIPPED_TAGS[tagName]);
   }
 
+  function hasMeaningfulAttribute(el) {
+    var ariaLabel = el && el.getAttribute ? el.getAttribute("aria-label") : "";
+    var role = el && el.getAttribute ? el.getAttribute("role") : "";
+
+    return Boolean(ariaLabel || role);
+  }
+
+  function getVisibleChildren(el, context) {
+    var children = context.dom.getElementChildren(el);
+    var visibleChildren = [];
+    var index;
+    var child;
+
+    for (index = 0; index < children.length; index += 1) {
+      child = children[index];
+
+      if (!shouldSkipElement(child) && context.dom.isVisible(child, context)) {
+        visibleChildren.push(child);
+      }
+    }
+
+    return visibleChildren;
+  }
+
+  function isBoringWrapper(el, context, role, visibleChildren) {
+    var tagName = el && el.tagName ? el.tagName.toLowerCase() : "";
+
+    if (tagName !== "div" && tagName !== "span") {
+      return false;
+    }
+
+    if (SEMANTIC_TAGS[tagName] || role !== "Element") {
+      return false;
+    }
+
+    if (hasMeaningfulAttribute(el) || context.collect.getDirectText(el)) {
+      return false;
+    }
+
+    return visibleChildren.length > 0 && visibleChildren.length <= 3;
+  }
+
+  function hasMeaningfulTreeRole(role) {
+    return Boolean(role && role !== "Element" && role !== "Text");
+  }
+
+  function hasMeaningfulVisibleDescendant(children, context, depth) {
+    var index;
+    var child;
+    var role;
+    var childChildren;
+
+    if (!children || children.length === 0 || depth > 3) {
+      return false;
+    }
+
+    for (index = 0; index < children.length; index += 1) {
+      child = children[index];
+      role = context.roles.inferRole(child, context.roleContext);
+
+      if (hasMeaningfulTreeRole(role) || context.collect.getDirectText(child)) {
+        return true;
+      }
+
+      childChildren = getVisibleChildren(child, context);
+
+      if (hasMeaningfulVisibleDescendant(childChildren, context, depth + 1)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function isTinyLayoutRect(rect) {
+    if (!rect || typeof rect.width !== "number" || typeof rect.height !== "number") {
+      return false;
+    }
+
+    return rect.height === 0 || rect.width <= 12 || rect.height <= 1;
+  }
+
+  function isLayoutOnlySpacer(el, context, role, visibleChildren) {
+    var tagName = el && el.tagName ? el.tagName.toLowerCase() : "";
+    var rect;
+
+    if (tagName !== "div" && tagName !== "span") {
+      return false;
+    }
+
+    if (SEMANTIC_TAGS[tagName] || hasMeaningfulTreeRole(role)) {
+      return false;
+    }
+
+    rect = context.dom.getRect(el, context);
+
+    return isTinyLayoutRect(rect) &&
+      !summarizeText(el, context) &&
+      !hasMeaningfulVisibleDescendant(visibleChildren, context, 1);
+  }
+
   function createTreeNode(el, context, depth) {
     var tagName = el.tagName ? el.tagName.toLowerCase() : "element";
     var rect = context.dom.getRect(el, context);
@@ -833,13 +1097,15 @@
     var children;
     var index;
     var child;
+    var role;
+    var visibleChildren;
     var childNode;
 
     if (depth > state.maxDepth || state.count >= state.maxNodes) {
       return;
     }
 
-    children = context.dom.getElementChildren(parentEl);
+    children = getVisibleChildren(parentEl, context);
 
     for (index = 0; index < children.length; index += 1) {
       if (state.count >= state.maxNodes) {
@@ -847,8 +1113,15 @@
       }
 
       child = children[index];
+      role = context.roles.inferRole(child, context.roleContext);
+      visibleChildren = getVisibleChildren(child, context);
 
-      if (shouldSkipElement(child) || !context.dom.isVisible(child, context)) {
+      if (isLayoutOnlySpacer(child, context, role, visibleChildren)) {
+        continue;
+      }
+
+      if (isBoringWrapper(child, context, role, visibleChildren)) {
+        appendChildren(child, parentNode, context, state, depth);
         continue;
       }
 
